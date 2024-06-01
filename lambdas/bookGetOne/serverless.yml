@@ -1,0 +1,8 @@
+handler: bootstrap
+architecture: arm64
+package:
+  artifact: lambdas/bookGetOne/bookGetOne.zip
+events:
+  - httpApi:
+      path: /books/{id}
+      method: get

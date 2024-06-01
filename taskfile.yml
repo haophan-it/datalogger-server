@@ -1,0 +1,43 @@
+version: "3"
+
+dotenv: ['.env']
+
+vars:
+  FOLDER: lambdas
+  CMD_CREATE_FUNCTION: aws lambda create-function --runtime provided.al2023 --architectures arm64 --role arn:aws:iam::{{.IAM_ID}}:role/lambda-ex
+  CMD_UPDATE_FUNCTION: aws lambda update-function-code
+  PREFIX_FUNC: datalogger-service-dev-
+
+tasks:
+
+  build-go:
+    cmds:
+      - |
+        for service in $(ls {{.FOLDER}}); do
+          echo "Building $service"
+          GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o ./{{.FOLDER}}/$service/bootstrap ./{{.FOLDER}}/$service/main.go
+          (cd ./{{.FOLDER}}/$service && zip $service.zip bootstrap)
+        done
+
+  build-function:
+    cmds:
+      - GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o ./{{.FOLDER}}/{{.func}}/bootstrap ./{{.FOLDER}}/{{.func}}/main.go
+      - (cd ./{{.FOLDER}}/{{.func}} && zip {{.func}}.zip bootstrap)
+
+  deploy-function:
+    cmds:
+      - aws lambda update-function-code --function-name {{.PREFIX_FUNC}}{{.func}} --zip-file fileb://{{.FOLDER}}/{{.func}}/{{.func}}.zip > output.txt
+      - rm -rf ./{{.FOLDER}}/{{.func}}/bootstrap
+      - rm -rf ./{{.FOLDER}}/{{.func}}/{{.func}}.zip
+      - rm -rf output.txt
+
+  deploy:
+    cmds:
+      - |
+        for service in $(ls {{.FOLDER}}); do
+          echo "Deploy $service"
+          {{.CMD_UPDATE_FUNCTION}} --function-name {{.PREFIX_FUNC}}$service --zip-file fileb://{{.FOLDER}}/$service/$service.zip > output.txt
+          rm -rf ./{{.FOLDER}}/$service/bootstrap
+          rm -rf ./{{.FOLDER}}/$service/$service.zip
+        done
+      - rm -rf output.txt

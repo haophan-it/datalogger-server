@@ -1,0 +1,8 @@
+handler: bootstrap
+architecture: arm64
+package:
+  artifact: lambdas/bookList/bookList.zip
+events:
+  - httpApi:
+      path: /books
+      method: get
