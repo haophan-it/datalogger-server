@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"datalogger/modal"
 	"encoding/json"
 	"net/http"
 
@@ -14,16 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func create(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	var book modal.Books
-	err := json.Unmarshal([]byte(req.Body), &book)
-	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-		}, nil
-	}
-
+func get(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return events.APIGatewayProxyResponse{
@@ -33,14 +23,11 @@ func create(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, 
 	}
 
 	svc := dynamodb.NewFromConfig(cfg)
-	newBook, err := svc.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	out, err := svc.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
 		TableName: aws.String("books"),
-		Item: map[string]types.AttributeValue{
-			"id":     &types.AttributeValueMemberS{Value: book.Id},
-			"name":   &types.AttributeValueMemberS{Value: book.Name},
-			"author": &types.AttributeValueMemberS{Value: book.Author},
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: req.PathParameters["id"]},
 		},
-		ReturnValues: types.ReturnValueAllOld,
 	})
 	if err != nil {
 		return events.APIGatewayProxyResponse{
@@ -49,7 +36,7 @@ func create(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, 
 		}, nil
 	}
 
-	res, _ := json.Marshal(newBook)
+	res, _ := json.Marshal(out)
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Headers: map[string]string{
@@ -60,5 +47,5 @@ func create(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, 
 }
 
 func main() {
-	lambda.Start(create)
+	lambda.Start(get)
 }

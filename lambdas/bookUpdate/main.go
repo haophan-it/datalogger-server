@@ -4,6 +4,7 @@ import (
 	"context"
 	"datalogger/modal"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -14,9 +15,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func create(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func update(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var book modal.Books
 	err := json.Unmarshal([]byte(req.Body), &book)
+	fmt.Println("book", book)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 400,
@@ -33,15 +35,29 @@ func create(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, 
 	}
 
 	svc := dynamodb.NewFromConfig(cfg)
-	newBook, err := svc.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	newBook, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
 		TableName: aws.String("books"),
-		Item: map[string]types.AttributeValue{
-			"id":     &types.AttributeValueMemberS{Value: book.Id},
-			"name":   &types.AttributeValueMemberS{Value: book.Name},
-			"author": &types.AttributeValueMemberS{Value: book.Author},
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{
+				Value: req.PathParameters["id"],
+			},
 		},
-		ReturnValues: types.ReturnValueAllOld,
+		ExpressionAttributeNames: map[string]string{
+			"#name":   "name",
+			"#author": "author",
+		},
+		UpdateExpression: aws.String("SET #name = :n, #author = :a"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":n": &types.AttributeValueMemberS{
+				Value: book.Name,
+			},
+			":a": &types.AttributeValueMemberS{
+				Value: book.Author,
+			},
+		},
+		ReturnValues: types.ReturnValueAllNew,
 	})
+
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -60,5 +76,5 @@ func create(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, 
 }
 
 func main() {
-	lambda.Start(create)
+	lambda.Start(update)
 }

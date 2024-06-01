@@ -23,6 +23,8 @@ functions:
   bookList: ${file(lambdas/bookList/serverless.yml)}
   bookCreate: ${file(lambdas/bookCreate/serverless.yml)}
   bookGetOne: ${file(lambdas/bookGetOne/serverless.yml)}
+  bookDelete: ${file(lambdas/bookDelete/serverless.yml)}
+  bookUpdate: ${file(lambdas/bookUpdate/serverless.yml)}
 
 package:
   individually: true
