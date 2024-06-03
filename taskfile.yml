@@ -41,3 +41,8 @@ tasks:
           rm -rf ./{{.FOLDER}}/$service/$service.zip
         done
       - rm -rf output.txt
+  
+  deploy-web:
+    cmds:
+      - aws s3 cp frontend/build s3://helloweb-demo --recursive
+      
