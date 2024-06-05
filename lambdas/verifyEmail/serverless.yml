@@ -1,0 +1,4 @@
+handler: bootstrap
+architecture: arm64
+package:
+  artifact: lambdas/verifyEmail/verifyEmail.zip

@@ -19,12 +19,19 @@ provider:
       Resource:
         - "arn:aws:dynamodb:*:*:table/books"
 
+    - Effect: "Allow"
+      Action:
+        - "lambda:InvokeFunction"
+        - "cognito-idp:*"
+      Resource: "*"
+
 functions:
   bookList: ${file(lambdas/bookList/serverless.yml)}
   bookCreate: ${file(lambdas/bookCreate/serverless.yml)}
   bookGetOne: ${file(lambdas/bookGetOne/serverless.yml)}
   bookDelete: ${file(lambdas/bookDelete/serverless.yml)}
   bookUpdate: ${file(lambdas/bookUpdate/serverless.yml)}
+  verifyEmail: ${file(lambdas/verifyEmail/serverless.yml)}
 
 package:
   individually: true
