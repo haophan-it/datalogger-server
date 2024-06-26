@@ -1,5 +1,8 @@
 service: datalogger-service
 
+plugins:
+  - serverless-dotenv-plugin
+
 provider:
   name: aws
   runtime: provided.al2
@@ -17,7 +20,7 @@ provider:
         - "dynamodb:Update*"
         - "dynamodb:PutItem"
       Resource:
-        - "arn:aws:dynamodb:*:*:table/books"
+        - "arn:aws:dynamodb:*:*:table/${env:DATABASE_NAME}"
 
     - Effect: "Allow"
       Action:
